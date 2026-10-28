@@ -7,7 +7,7 @@ Web app for a GB energy utility's day-ahead team. For any delivery day in **Janu
 
 The app analyses wind forecast uncertainty only. It does **not** say how much electricity to buy; combine it with demand and other supply information.
 
-**Live app:** _not deployed yet — add the Vercel URL here after deploying and testing it._
+**Live app:** https://dg34h6dg34h6.vercel.app
 
 ## AI-tool disclosure
 Built with the assistance of **Claude (Anthropic) via Claude Code**: data exploration, code and test generation,
@@ -92,7 +92,7 @@ backend/app/context.py    Reference methods and decision-time sensitivity (unit-
 backend/app/main.py       FastAPI routes: /api/meta, /api/forecast, /api/accuracy, /api/baselines, /api/cutoff-sensitivity, /api/health
 backend/tests/            test_core.py (logic), test_context.py (reference methods, sensitivity), test_api.py (endpoints on the real snapshot)
 frontend/src/insights.test.js  Node built-in tests for the finding/chart-row generators (npm test)
-.github/workflows/ci.yml  CI: backend pytest, frontend tests + build, Docker build (not yet run on GitHub)
+.github/workflows/ci.yml  CI: backend pytest, frontend tests + build, Docker build
 backend/data/             actuals.csv, forecasts.csv, meta.json (Elexon snapshot)
 frontend/src/             React + Vite + Recharts UI: App.jsx, lib.js (API/format helpers), insights.js (pure functions that
                           generate findings and chart rows), components/ (Hero, Scenario, ForecastChart,
@@ -115,7 +115,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 cd backend && uvicorn app.main:app --port 8000      # API on :8000
 cd frontend && npm install && npm run dev            # UI on :5173 (proxies /api to :8000)
 ```
-**Docker (single container; not yet tested on the author's machine, see below)**
+**Docker (single container; built and run locally, see Deployment)**
 ```bash
 docker build -t wind-desk . && docker run -p 8000:8000 wind-desk   # http://localhost:8000
 ```
@@ -129,11 +129,11 @@ cd backend && pytest
 half-hour/hour alignment, missing data, metrics with hand-calculated answers (MAE, RMSE, bias, percentiles, threshold), and API tests on the real snapshot
 (including a check that no forecast published after the cutoff is ever returned, for every January day and several cutoffs), the two reference methods (with explicit no-look-ahead tests) and the decision-time sensitivity (known answers, same-hours scoring, freshest forecast never published after the hour starts). Frontend tests cover the generated findings (averages, largest miss, stretches of significant hours, thresholds) and the chart rows (forecast/actual crossings).
 
-CI (`.github/workflows/ci.yml`) runs the backend tests, frontend tests and build, and a Docker build on every push. It has not run yet: it first runs when the repo is pushed to GitHub.
+CI (`.github/workflows/ci.yml`) runs the backend tests, frontend tests and build, and a Docker build on every push. The first run on GitHub (after the initial push) completed successfully.
 
 ## Deployment (Vercel, free tier)
 Push the repo to GitHub (anonymous repo name), import it in Vercel; `vercel.json` builds the UI (`frontend/dist`) and serves `api/index.py` (FastAPI) for `/api/*`, including `backend/**` data files.
-**Status: not deployed and not tested on Vercel yet.** The Dockerfile has also not been built on the author's machine yet (Docker was not running). Do not treat either as verified until tested.
+**Status (checked 28 Oct 2026):** deployed at https://dg34h6dg34h6.vercel.app. After deploying, `/`, `/api/health`, `/api/accuracy` (MAE 2,142 MW over 744 hours, same as locally), `/api/lead-time`, `/api/cutoff-sensitivity`, `/api/baselines`, `/api/forecast` and `/api/meta` all returned HTTP 200. `vercel.json` sets `"framework": null` because Vercel otherwise detects FastAPI and ignores the static UI (the first deploy returned 404 for every URL). The Docker image was built and run on the author's machine (Docker 29.7.2): the container served the UI and the API, and `/api/accuracy` returned the same MAE (2,142 MW, 744 hours).
 
 ## Known limitations
 One month, one forecast source, one actual series (FUELHH); the cutoff is an assumption; national level only; no demand or supply data; snapshot data is static.
